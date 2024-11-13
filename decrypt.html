@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giải Mã Dữ Liệu AES</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body>
+    <h1>Giải Mã Dữ Liệu AES</h1>
+    
+    <label for="cipherText">Nhập chuỗi cipher text (hex):</label><br>
+    <input type="text" id="cipherText" placeholder="81B4EB3BB9C1AFEE7356D47B246118BC8D07E5B9ED27D4EED5F3F3020F9E20"><br><br>
+
+    <label for="aesKey">Nhập khóa AES (hex):</label><br>
+    <input type="text" id="aesKey" placeholder="000102030405060708090A0B0C0D0E0F" maxlength="32"><br><br>
+
+    <button onclick="decryptData()">Giải Mã</button><br><br>
+
+    <h2>Kết quả:</h2>
+    <pre id="result"></pre>
+
+    <script>
+        function decryptData() {
+            // Lấy dữ liệu từ input
+            const cipherTextHex = document.getElementById('cipherText').value;
+            const aesKeyHex = document.getElementById('aesKey').value;
+
+            // Chuyển đổi từ hex sang byte
+            const cipherText = CryptoJS.enc.Hex.parse(cipherTextHex);
+            const aesKey = CryptoJS.enc.Hex.parse(aesKeyHex);
+            
+            // IV (12 byte) mặc định, có thể thay đổi tùy ý
+            const iv = CryptoJS.lib.WordArray.create([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+
+            // Giải mã dữ liệu
+            const decrypted = CryptoJS.AES.decrypt({ ciphertext: cipherText }, aesKey, {
+                iv: iv,
+                mode: CryptoJS.mode.GCM,
+                padding: CryptoJS.pad.NoPadding
+            });
+
+            // Chuyển đổi kết quả thành chuỗi
+            const result = decrypted.toString(CryptoJS.enc.Utf8);
+
+            // Hiển thị kết quả
+            document.getElementById('result').innerText = result;
+        }
+    </script>
+</body>
+</html>

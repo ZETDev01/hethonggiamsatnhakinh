@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống giám sát môi trường nhà kính</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="./polished-snowflake-4032.animaapp.io_files/image-23@2x.png" alt="=school logo">
+            <h1>HỆ THỐNG GIÁM SÁT MÔI TRƯỜNG NHÀ KÍNH</h1>
+            <img src="static/logo.png" alt="faculty logo">
+        </div>
+        <div class="body">
+            <div class="body-half">
+                <div class="body-header">
+                    <div class="title-wrap"><h2>Thông số</h2></div>
+                </div>
+                <div class="body-content">
+                    <div class="item-container">
+                        <div class="item-content">
+                            <img src="temperature.png" alt="Nhiệt độ">
+                            <h3 class="item-label">Nhiệt độ</h3>
+                        </div>
+                        <h3 class="item-label" id="temperature">25°C</h3>
+                    </div>
+                    <div class="item-container">
+                        <div class="item-content">
+                            <img src="humidity.png" alt="Độ ẩm">
+                            <h3 class="item-label">Độ ẩm</h3>
+                        </div>
+                        <h3 class="item-label" id="humidity">70%</h3>
+                    </div>
+                    <div class="item-container">
+                        <div class="item-content">
+                            <img src="soil_humidity.png" alt="Độ ẩm đất">
+                            <h3 class="item-label">Độ ẩm đất</h3>
+                        </div>
+                        <h3 class="item-label" id="soilHumidity">5%</h3>
+                    </div>
+                    <div class="item-container">
+                        <div class="item-content">
+                            <img src="sunny.png" id="sunStatusImg" alt="Cường độ sáng">
+                            <h3 class="item-label">Cường độ sáng</h3>
+                        </div>
+                        <h3 class="item-label" id="sunStatus">Ngày</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="vertical"></div>
+            <div class="body-half">
+                <div class="body-header">
+                    <div class="title-wrap"><h2>Điều khiển</h2></div>
+                </div>
+                <div class="body-content">
+                    <div class="item-container">
+                        <div class="item-content">
+                            <img src="light.png" alt="Đèn sáng">
+                            <h3 class="item-label">Đèn</h3>
+                        </div>
+                        <button id="toggleLight">OFF</button>
+                    </div>
+                    <div class="item-container">
+                        <div class="item-content">
+                            <img src="fan.png" alt="Quạt">
+                            <h3 class="item-label">Quạt</h3>
+                        </div>
+                        <button id="toggleFan">OFF</button>
+                    </div>
+                    <div class="item-container">
+                        <div class="item-content">
+                            <img src="pump.png" alt="Máy bơm">
+                            <h3 class="item-label">Máy bơm</h3>
+                        </div>
+                        <button id="togglePump">OFF</button>
+                    </div>
+                    <div class="item-container">
+                        <div class="item-content">
+                            <img src="spray.png" alt="Máy phun sương">
+                            <h3 class="item-label">Máy phun sương</h3>
+                        </div>
+                        <button id="toggleMist">OFF</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="footer-container">
+            <div>
+                <div class="button-container">
+                    <button id="exportExcel" style="width: auto;">Xuất Excel</button>
+                </div>
+                <h3 id="datetime"></h3>
+            </div>
+        </div>
+    </div>
+    <script>// AES Decryption
+        function decryptData() {
+            const base64Input = document.getElementById('base64Input').value.trim();
+            try {
+                const encryptedData = CryptoJS.enc.Base64.parse(base64Input);
+                const decrypted = CryptoJS.AES.decrypt(
+                    { ciphertext: encryptedData },
+                    aesKey,
+                    { iv: aesIv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
+                );
+                const decryptedText = decrypted.toString(CryptoJS.enc.Utf8);
+                document.getElementById('decodedOutput').textContent = decryptedText || "Error";
+            } catch (error) {
+                document.getElementById('decodedOutput').textContent = "Faulty";
+            }
+        }        
+    </script>
+    <script>
+        // Check if the user is logged in
+        if (!localStorage.getItem('loggedIn')) {
+            // If not logged in, redirect to login page
+            window.location.href = 'login.html';
+        }
+    
+        // Remove login status when the user leaves the page
+        window.addEventListener('beforeunload', function () {
+            localStorage.removeItem('loggedIn');
+        });
+    </script>
+    
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.2/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script>
+        const firebaseConfig = { 
+            apiKey : "AIzaSyCqs9VDN1WsIemBC1JGVplfirR8t6mI9qU" , 
+            authDomain : "zkma-2e89e.firebaseapp.com" , 
+            databaseURL : "https://zkma-2e89e-default-rtdb.asia-southeast1.firebasedatabase.app" , 
+            projectId : "zkma-2e89e" , 
+            storageBucket : "zkma-2e89e.firebasestorage.app" , 
+            messagingSenderId : "997840264341" , 
+            appId : "1:997840264341:web:b152b534454cf736058f9c" , 
+            measurementId : "G-N83VSQ4ZLR" 
+          };
+
+        firebase.initializeApp(firebaseConfig);
+        function fetchData() {
+            firebase.database().ref().on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    const Base64Data = {
+                        Base64Data: data.EncryptedData
+                    };
+                    console.log(JSON.stringify(Base64Data));
+        
+                    const output = {
+                        temperature: data.temp,
+                        humidity: data.humidity,
+                        soilMoisture: data.soilMoisture,
+                        lightLevel: data.lightt, 
+                        fan: data.fan,
+                        mist: data.mist,
+                        pump: data.pump,
+                        light: data.light
+                    };
+                    console.log(JSON.stringify(output));
+                } else {
+                    console.log("Erorr");
+                }
+            }, (error) => {
+                console.error("Error ", error);
+            });
+        }
+        
+        fetchData();
+
+        let dataLogs = [];
+        setInterval(logData, 60000);
+
+        function logData() {
+            firebase.database().ref().once('value').then((snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    const logEntry = {
+                        'Thời gian': new Date().toLocaleString('vi-VN'),
+                        'Nhiệt độ': data.temp + '°C',
+                        'Độ ẩm': data.humidity + '%',
+                        'Độ ẩm đất': data.soil_hum + '%',
+                        'Ngày/Đêm': data.sun ? 'Ngày' : 'Đêm',
+                        'Đèn': data.light ? 'Bật' : 'Tắt',
+                        'Quạt': data.fan ? 'Bật' : 'Tắt',
+                        'Bơm': data.pump ? 'Bật' : 'Tắt',
+                        'Phun Sương': data.mist ? 'Bật' : 'Tắt'
+                    };
+                    dataLogs.push(logEntry);
+                    updateUI(data);
+                }
+            });
+        }
+
+        // Real-time updates from Firebase
+        firebase.database().ref().on('value', (snapshot) => {
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                updateUI(data);
+            }
+        });
+        function changeSunStatusIcon(ele){
+            const sunStatusImg = document.getElementById('sunStatusImg')
+            if (ele.textContent === 'Ngày'){
+                sunStatusImg.src = 'sunny.png'
+            }
+            else{
+                sunStatusImg.src = 'moon.png'
+            }
+        }
+        // Update UI with Firebase data
+        function updateUI(data) {
+            const sunStatus = document.getElementById('sunStatus')
+            document.getElementById('temperature').textContent = data.temp + '°C';
+            document.getElementById('humidity').textContent = data.humidity + '%';
+            document.getElementById('soilHumidity').textContent = data.soil_hum + '%';
+            sunStatus.textContent = data.sun ? 'Ngày' : 'Đêm';
+            changeSunStatusIcon(sunStatus)
+            document.getElementById('toggleLight').textContent = data.light ? 'ON' : 'OFF';
+            document.getElementById('toggleFan').textContent = data.fan ? 'ON' : 'OFF';
+            document.getElementById('togglePump').textContent = data.pump ? 'ON' : 'OFF';
+            document.getElementById('toggleMist').textContent = data.mist ? 'ON' : 'OFF';
+        }
+
+        // Toggle device state on Firebase and update button text
+        function toggleDevice(device, buttonId) {
+            firebase.database().ref(device).once('value').then((snapshot) => {
+                const currentStatus = snapshot.val();
+                firebase.database().ref().update({
+                    [device]: !currentStatus
+                });
+            });
+        }
+
+        document.getElementById('toggleLight').addEventListener('click', () => toggleDevice('light', 'toggleLight'));
+        document.getElementById('toggleFan').addEventListener('click', () => toggleDevice('fan', 'toggleFan'));
+        document.getElementById('togglePump').addEventListener('click', () => toggleDevice('pump', 'togglePump'));
+        document.getElementById('toggleMist').addEventListener('click', () => toggleDevice('mist', 'toggleMist'));
+
+        // Export data to Excel
+        document.getElementById('exportExcel').addEventListener('click', () => {
+            // Check if there's existing data in the local storage
+            let existingLogs = localStorage.getItem('dataLogs');
+
+            // Parse the data if it exists, otherwise initialize an empty array
+            let savedLogs = existingLogs ? JSON.parse(existingLogs) : [];
+
+            // Merge the new logs with the old logs
+            let combinedLogs = savedLogs.concat(dataLogs);
+
+            if (combinedLogs.length > 0) {
+                // Store the combined logs back into local storage
+                localStorage.setItem('dataLogs', JSON.stringify(combinedLogs));
+
+                // Create a new Excel sheet with the combined data
+                const ws = XLSX.utils.json_to_sheet(combinedLogs);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Dữ liệu');
+
+                // Export the combined data to an Excel file
+                XLSX.writeFile(wb, 'DuLieuMoiTruong.xlsx');
+
+                // Clear the current logs
+                dataLogs = [];
+            } else {
+                alert('Chưa có dữ liệu để xuất.');
+            }
+        });
+
+
+        // Update Date and Time
+        function updateDateTime() {
+            const now = new Date();
+            const date = now.toLocaleDateString('vi-VN');
+            const time = now.toLocaleTimeString('vi-VN');
+            document.getElementById('datetime').textContent = `Ngày: ${date} | Giờ: ${time}`;
+        }
+
+        setInterval(updateDateTime, 1000);
+        updateDateTime(); // Initial call to display the date and time immediately
+    </script>
+    <button id="logoutButton">Exit</button>
+
+    <script>
+        document.getElementById('logoutButton').addEventListener('click', function() {
+            // Clear the login status from local storage and redirect to login page
+            localStorage.removeItem('loggedIn');
+            window.location.href = 'login.html';
+        });
+    </script>
+    <script>
+        // Khóa AES và IV (sử dụng HEX để biến đổi sang dạng byte)
+        const aesKey = CryptoJS.enc.Hex.parse("2B7E151628AED2A6ABF7158809CF4F3C");
+        const aesIv = CryptoJS.enc.Hex.parse("000102030405060708090A0B0C0D0E0F");
+
+        function decryptData() {
+            const base64Input = document.getElementById('base64Input').value.trim();
+
+            try {
+                // Chuyển đổi từ Base64 sang chuỗi nhị phân
+                const encryptedData = CryptoJS.enc.Base64.parse(base64Input);
+                
+                // Giải mã
+                const decrypted = CryptoJS.AES.decrypt({ ciphertext: encryptedData }, aesKey, {
+                    iv: aesIv,
+                    mode: CryptoJS.mode.CBC,
+                    padding: CryptoJS.pad.Pkcs7
+                });
+
+                const decryptedText = decrypted.toString(CryptoJS.enc.Utf8);
+                
+                if (decryptedText) {
+                    // Chuyển đổi chuỗi JSON thành đối tượng và hiển thị
+                    const jsonData = JSON.parse(decryptedText);
+                    document.getElementById('output').innerText = JSON.stringify(jsonData, null, 2);
+                } else {
+                    document.getElementById('output').innerText = "Không có dữ liệu hợp lệ.";
+                }
+            } catch (error) {
+                document.getElementById('output').innerText = "Lỗi trong quá trình giải mã: " + error.message;
+            }
+        }
+    </script>
+
+    
+</body>
+
+</html>

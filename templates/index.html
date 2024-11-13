@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AES Decryption Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+        }
+        .error {
+            color: red;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>AES Decryption Tool</h1>
+    <form method="POST" action="/">
+        <label for="data">Enter Base64 Encoded AES Encrypted Data:</label><br>
+        <textarea id="data" name="data" required></textarea><br><br>
+        <input type="submit" value="Decrypt">
+    </form>
+
+    {% if error %}
+    <p class="error">Error: {{ error }}</p>
+    {% endif %}
+
+    {% if data %}
+    <h2>Decrypted JSON Data:</h2>
+    <pre>{{ data | tojson(indent=2) }}</pre>
+    {% endif %}
+</body>
+</html>
