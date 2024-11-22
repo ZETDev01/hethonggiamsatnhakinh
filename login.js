@@ -5,7 +5,7 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
     const password = document.getElementById('password').value;
 
     // Kiểm tra tài khoản và mật khẩu
-    if (username === 'hethonggiamsatnhakinhkma' && password === 'tovubaodt4') {
+    if (username === 'baobao' && password === 'baobao') {
         // Đăng nhập thành công, lưu trạng thái đăng nhập
         localStorage.setItem('loggedIn', 'true');
         // Chuyển sang trang index.html
